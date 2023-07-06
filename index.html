@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>花火</title>
+</head>
+
+<body style="background-color: black;">
+	<!-- 花火を描画するキャンバス -------(*1) -->
+	<canvas id="fireworks" width="400" height="400" style="border: 1px solid silver;"></canvas>
+</body>
+<script>
+	// HTMLの<canvas>要素を取得 --- (*2)
+	const canvas = document.getElementById('fireworks');
+	const ctx = canvas.getContext('2d');
+	// 花火のパーティクルを格納する配列
+	let fireworks = [];
+	// パーティクルのクラス --- (*3)
+	class Particle {
+		constructor(x, y) { // 初期値を決定 --- (*4)
+			this.x = x;
+			this.y = y;
+			this.color = 'red';
+			this.radius = 1;
+			this.speed = Math.random() * 3 + 1;
+			this.angle = Math.random() * Math.PI * 2;
+			this.vx = Math.cos(this.angle) * this.speed;
+			this.vy = Math.sin(this.angle) * this.speed;
+			this.gravity = 0.05;
+			this.opacity = 1;
+		}
+		update(deltaTime) { // 位置や透明度を更新 --- (*5)
+			this.x += this.vx * deltaTime;
+			this.y += this.vy * deltaTime;
+			this.vy += this.gravity * deltaTime;
+			this.opacity -= 0.01 * deltaTime;
+			this.radius -= 0.05 * deltaTime;
+			// 半径が0未満にならないように制限
+			if (this.radius < 0) { this.radius = 0; }
+		}
+		draw() { // Canvas APIを使って描画 --- (*6)
+			ctx.beginPath();
+			ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+			ctx.fillStyle = this.color;
+			ctx.globalAlpha = this.opacity;
+			ctx.fill();
+			ctx.closePath();
+		}
+	}
+	let lastTime = 0;
+	// フレームを更新する関数 --- (*7)
+	function update() {
+		// 経過時間を計算
+		const time = performance.now();
+		const deltaTime = (time - lastTime) / 100;
+		lastTime = time;
+		// キャンバスをクリア
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		// パーティクルを更新して描画 --- (*8)
+		for (let i = 0; i < fireworks.length; i++) {
+			fireworks[i].update(deltaTime);
+			fireworks[i].draw();
+			// 無効なパーティクルを削除 --- (*9)
+			if (fireworks[i].opacity <= 0 || fireworks[i].radius <= 0) {
+				fireworks.splice(i, 1);
+				i--;
+			}
+		}
+		// 次のフレームを再描画 --- (*10)
+		requestAnimationFrame(update);
+	}
+	// 花火を(cx, cy)に打ち上げる --- (*11)
+	function launchFireworks(cx, cy) {
+		const colors = ['orange', 'red', 'yellow'];
+		for (let i = 0; i < 100; i++) { // 100個のパーティクル
+			const particle = new Particle(cx, cy);
+			particle.color = colors[Math.floor(Math.random() * colors.length)];
+			particle.radius = Math.random() * 2 + 1;
+			fireworks.push(particle);
+		}
+	}
+	// 初期化して花火を打ち上げる --- (*12)
+	lastTime = performance.now();
+	update();
+	setInterval(() => {
+		const cx = Math.random() * canvas.width;
+		const cy = Math.random() * canvas.height;
+		launchFireworks(cx, cy);
+	}, 1200); // 打ち上げ間隔を指定 --- (*13)
+</script>
+
+</html>
